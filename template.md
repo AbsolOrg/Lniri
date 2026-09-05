@@ -65,7 +65,19 @@ Add the following rules to your `config.kdl`:
 
 ```kdl
 // ============================================================================
-// 1. GLOBAL WINDOW CORNER RADIUS (Crucial for curved glass refraction)
+// 1. DISABLE WHITE BORDER LINES (Pure optical glass without artificial frames)
+// ============================================================================
+layout {
+    focus-ring {
+        off
+    }
+    border {
+        off
+    }
+}
+
+// ============================================================================
+// 2. GLOBAL WINDOW CORNER RADIUS (Crucial for curved glass refraction)
 // ============================================================================
 window-rule {
     geometry-corner-radius 12
@@ -73,7 +85,7 @@ window-rule {
 }
 
 // ============================================================================
-// 2. LIQUID GLASS WINDOW RULES
+// 3. LIQUID GLASS WINDOW RULES
 // ============================================================================
 
 // Kitty Terminal
@@ -85,17 +97,17 @@ window-rule {
         xray true
         liquid-glass {
             refraction-strength 4.0
-            power-factor 3.0
+            power-factor 3.5
             refraction-power 1.5
-            glow-weight 0.12
-            edge-lighting 0.8
+            glow-weight 0.0
+            edge-lighting 0.5
             saturation 1.1
             vibrancy 0.35
             adaptive-dim 0.15
             adaptive-boost 0.25
             physical-refraction 0.0
             lens-distortion 0.2
-            fringing 0.5
+            fringing 0.4
         }
     }
 }
@@ -109,17 +121,17 @@ window-rule {
         xray true
         liquid-glass {
             refraction-strength 4.0
-            power-factor 3.0
+            power-factor 3.5
             refraction-power 1.5
-            glow-weight 0.12
-            edge-lighting 0.8
+            glow-weight 0.0
+            edge-lighting 0.5
             saturation 1.1
             vibrancy 0.35
             adaptive-dim 0.15
             adaptive-boost 0.25
             physical-refraction 0.0
             lens-distortion 0.2
-            fringing 0.5
+            fringing 0.4
         }
     }
 }
@@ -495,6 +507,18 @@ window-rule {
 - Increase `adaptive-dim` to `0.25` or `0.30` in `config.kdl`.
 - Increase terminal background opacity slightly (e.g. from `0.50` to `0.65` in `kitty.conf`).
 - Use bold fonts or a dark base color (`background #050505`).
+
+### Q: How do I remove the white border lines around windows for a pure glass look?
+**Solution**:
+1. Disable Niri's built-in white focus ring in `config.kdl`:
+   ```kdl
+   layout {
+       focus-ring {
+           off
+       }
+   }
+   ```
+2. In your `window-rule` under `liquid-glass { ... }`, set `glow-weight 0.0`. This removes the white specular line, leaving only pure refractive glass and natural wallpaper edge-lighting (`edge-lighting 0.5`).
 
 ### Q: Mod+T opens Alacritty instead of Kitty.
 **Solution**: Change the spawn command in `config.kdl`:
