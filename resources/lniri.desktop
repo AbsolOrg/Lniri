@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Lniri (Liquid Glass)
+Comment=A scrollable-tiling Wayland compositor with liquid glass effects
+Exec=/usr/local/bin/lniri-session
+Type=Application
+DesktopNames=niri;lniri
