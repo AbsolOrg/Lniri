@@ -320,37 +320,27 @@ vec3 applyFrostedTint(vec3 color, float edgeProximity) {
     return color;
 }
 
-// Glass border rim lighting, specular highlight, and natural bevel reflection
-// Mathematically smooth monotonically increasing curves prevent pixel/edge glitches.
+// Pure Liquid Glass Border:
+// Reflects and refracts the background wallpaper through the curved glass bevel.
+// Completely eliminates artificial white strokes and white paint lines.
 vec3 glassOutline(vec2 position, vec2 blurSize, GlassFragment s, float glowStrength, float edgeLighting, float edgeProximity)
 {
     vec3 col = s.color.rgb;
 
-    // 1. Natural edge lighting from refracted wallpaper
+    // Natural chromatic vibrancy along the curved bevel (deepens wallpaper colors without clipping to white)
     if (edgeLighting > 0.001) {
-        col += s.color.rgb * s.concaveFactor * edgeLighting * 0.45;
+        float chromaBoost = s.concaveFactor * edgeLighting * 0.25;
+        col = clamp(mix(col, col * (1.0 + chromaBoost), 0.8), 0.0, 1.0);
     }
 
-    // 2. Subpixel-smooth rim specular highlight (light catching the beveled glass edge)
-    // s.dist <= 0 inside the window. d = -s.dist is distance inside the edge in pixels.
-    float d = max(-s.dist, 0.0);
-    // Smooth peak around 1.0px inside the edge, softly fading away by 3.2px
-    float rimProfile = smoothstep(0.0, 1.0, d) * (1.0 - smoothstep(1.0, 3.2, d));
-
+    // Optional specular rim highlight: ONLY active if explicitly requested via glowStrength > 0.0
     if (glowStrength > 0.001) {
-        // Specular glow along rim (monotonically smoothed, avoiding driver glitch bugs)
-        col = mix(col, vec3(1.0), rimProfile * clamp(glowStrength, 0.0, 0.8));
+        float d = max(-s.dist, 0.0);
+        float rimProfile = smoothstep(0.0, 1.0, d) * (1.0 - smoothstep(1.0, 3.0, d));
+        float topFactor = clamp(s.normal.y * 0.6 + 0.4, 0.0, 1.0);
+        float spec = rimProfile * topFactor * s.concaveFactor * glowStrength;
+        col = clamp(mix(col, vec3(1.0), spec), 0.0, 1.0);
     }
-
-    // 3. Directional highlight on top and side bevels (matching dolphin.png natural light source)
-    // In Cartesian coords, position.y > 0 is top of window.
-    float topFactor = clamp(s.normal.y * 0.7 + 0.3, 0.0, 1.0);
-    float naturalHighlight = rimProfile * topFactor * s.concaveFactor * (glowStrength * 0.35 + 0.15);
-    col += vec3(0.96, 0.98, 1.0) * naturalHighlight;
-
-    // 4. Subtle Fresnel grazing angle reflection
-    float fresnel = edgeProximity * edgeProximity * 0.06;
-    col += vec3(0.96, 0.98, 1.0) * fresnel;
 
     return col;
 }
