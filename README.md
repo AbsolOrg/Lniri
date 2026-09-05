@@ -19,6 +19,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/AbsolOrg/Lniri/main/inst
 ```
 
 > **Why this installer is smart:**
+> - **Auto-Detects Existing Installs**: If Lniri is already installed, running this command automatically enters **Update Mode** and lets you choose your update channel:
+>   - **Main branch**: Get the cutting-edge latest commits.
+>   - **Latest release**: Stay on stable tagged releases.
 > - **Zero-recompile on updates**: Maintains a persistent build cache in `~/.local/share/lniri/target`, so future runs and updates take seconds instead of compiling from scratch.
 > - **Hands-free**: Asks for `sudo` once at the beginning and keeps the session active in the background until installation finishes.
 > - **Self-contained**: Installs standalone binaries (`lniri`, `Lniri`, and `lniri-session`), systemd user units, and the Wayland session entry without requiring upstream `niri` to be installed first.
