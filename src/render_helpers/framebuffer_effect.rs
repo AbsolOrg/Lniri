@@ -182,7 +182,6 @@ impl FramebufferEffectElement {
                 Uniform::new("lg_refraction_dilute", 0.0f32),
                 Uniform::new("lg_dilute_strength", 0.0f32),
                 Uniform::new("lg_dilute_fringing", 0.0f32),
-                Uniform::new("lg_physical_refraction", 0.0f32),
                 Uniform::new("lg_lens_distortion", 0.0f32),
                 Uniform::new("lg_brightness", 0.0f32),
                 Uniform::new("lg_contrast", 0.0f32),

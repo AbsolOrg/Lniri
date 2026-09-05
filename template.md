@@ -88,6 +88,31 @@ window-rule {
 // 3. LIQUID GLASS WINDOW RULES
 // ============================================================================
 
+// Dolphin File Manager (Liquid Glass Window)
+window-rule {
+    match app-id="org.kde.dolphin"
+    match app-id="dolphin"
+    draw-border-with-background false
+    background-effect {
+        blur true
+        xray true
+        liquid-glass {
+            refraction-strength 4.5
+            power-factor 3.5
+            refraction-power 1.5
+            glow-weight 0.0
+            edge-lighting 0.0
+            saturation 1.15
+            vibrancy 0.35
+            adaptive-dim 0.0
+            adaptive-boost 0.0
+            physical-refraction 1.0
+            lens-distortion 0.15
+            fringing 0.5
+        }
+    }
+}
+
 // Kitty Terminal
 window-rule {
     match app-id="kitty"
@@ -183,7 +208,33 @@ window-rule {
 // }
 
 // ============================================================================
-// 3. KEYBINDINGS (Open Kitty)
+// 3. LIQUID GLASS LAYER RULES (Bars, Panels, Launchers, e.g. Mistbar, Waybar)
+// ============================================================================
+layer-rule {
+    match namespace="^mistbar.*"
+    match namespace="^waybar.*"
+    match namespace="^bar.*"
+    geometry-corner-radius 12
+    background-effect {
+        blur true
+        xray true // Use xray true for fast wallpaper refraction, or xray false to refract windows beneath
+        liquid-glass {
+            refraction-strength 5.0
+            power-factor 3.5
+            refraction-power 1.8
+            edge-thickness 0.20
+            edge-lighting 0.8
+            glow-weight 0.0
+            saturation 1.2
+            vibrancy 0.35
+            physical-refraction 1.0
+            fringing 0.45
+        }
+    }
+}
+
+// ============================================================================
+// 4. KEYBINDINGS (Open Kitty)
 // ============================================================================
 binds {
     Mod+Return hotkey-overlay-title="Open Terminal (Kitty)" { spawn "kitty"; }

@@ -333,6 +333,14 @@ pub fn render_for_tile(
         let mut background_effect = background_effect.0.lock().unwrap();
 
         let blur_region = get_cached_blur_region(states);
+        let has_explicit_effect = effect.liquid_glass.is_some() || effect.blur == Some(true);
+        // If the surface sets an empty blur region, but the user explicitly configured liquid-glass or blur in rules,
+        // treat as None (full surface geometry) so the effect is not discarded.
+        let blur_region = if has_explicit_effect && blur_region.as_ref().is_some_and(|r| r.is_empty()) {
+            None
+        } else {
+            blur_region
+        };
         let has_blur_region = blur_region.as_ref().is_some_and(|r| !r.is_empty());
 
         background_effect.update_config(blur_config);

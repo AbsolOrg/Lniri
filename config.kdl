@@ -10,8 +10,8 @@ window-rule {
             refraction-strength 4.0
             power-factor 3.5
             refraction-power 1.5
-            glow-weight 0.05
-            edge-lighting 0.5
+            glow-weight 0.0
+            edge-lighting 0.0
             saturation 1.15
             vibrancy 0.35
             adaptive-dim 0.0
@@ -22,3 +22,28 @@ window-rule {
         }
     }
 }
+
+// Layer Shell Rules (bars, docks, launchers, e.g. mistbar, waybar, fuzzel)
+layer-rule {
+    match namespace="^mistbar.*"
+    match namespace="^waybar.*"
+    match namespace="^bar.*"
+    geometry-corner-radius 12
+    background-effect {
+        blur true
+        xray true // Set xray false if you want the bar to refract windows underneath
+        liquid-glass {
+            refraction-strength 5.0
+            power-factor 3.5
+            refraction-power 1.8
+            edge-thickness 0.20
+            edge-lighting 0.8
+            glow-weight 0.0
+            saturation 1.2
+            vibrancy 0.35
+            physical-refraction 1.0
+            fringing 0.45
+        }
+    }
+}
+
