@@ -345,15 +345,38 @@ swww img /path/to/wallpaper.png --transition-type wipe --transition-duration 2
 
 Swap the `liquid-glass { ... }` block in your `config.kdl` to match your personal aesthetic preference:
 
-### Preset 1: Liquid Prism (README Look)
+### Preset 1: Pure Crystal Glass (Zero Dark Theme)
+*100% transparent optical glass with zero dark shading or tint. Completely clear window showing pure background wallpaper.*
+
+```kdl
+// In your terminal config: background_opacity 0.0 (or opacity = 0.0)
+liquid-glass {
+    refraction-strength 4.0
+    power-factor 3.5
+    refraction-power 1.5
+    glow-weight 0.0
+    edge-lighting 0.5
+    saturation 1.1
+    vibrancy 0.35
+    adaptive-dim 0.0
+    adaptive-boost 0.0
+    physical-refraction 0.0
+    lens-distortion 0.2
+    fringing 0.4
+}
+```
+
+---
+
+### Preset 2: Liquid Prism (README Look)
 *Maximum chromatic aberration, vivid edge-lighting, and dramatic optical curvature.*
 
 ```kdl
 liquid-glass {
     refraction-strength 4.0
-    power-factor 3.0
+    power-factor 3.5
     refraction-power 1.5
-    glow-weight 0.12
+    glow-weight 0.0
     edge-lighting 0.8
     saturation 1.1
     vibrancy 0.35
