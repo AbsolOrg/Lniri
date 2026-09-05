@@ -71,6 +71,9 @@ https://github.com/user-attachments/assets/4fceeaaf-4ff1-4c4d-adcf-af52cd33a912
 
 ## ⚙️ Configuration
 
+> 📖 **Looking for full terminal configs (Kitty, Alacritty, Ghostty), wallpaper daemon setups, and ready-to-use presets?**  
+> Check out the [**Complete Setup Template & Guide (template.md)**](template.md).
+
 Lniri looks for configuration files in the following order:
 1. `~/.config/lniri/config.kdl`
 2. `~/.config/niri/config.kdl` (seamless fallback for existing niri configs)

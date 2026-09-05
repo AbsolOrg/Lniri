@@ -49,6 +49,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/AbsolOrg/Lniri/main/inst
 
 ## ⚙️ 配置文件
 
+> 📖 **需要开箱即用的终端配置（Kitty、Alacritty、Ghostty）、壁纸守护程序设置与精选预设？**  
+> 请参阅 [**完整配置模板与指南 (template.md)**](template.md)。
+
 Lniri 按以下优先级查找配置文件：
 1. `~/.config/lniri/config.kdl`
 2. `~/.config/niri/config.kdl`（无缝兼容现有 niri 配置）
