@@ -1,4 +1,4 @@
-# Lniri — Liquid Glass Compositor for Wayland
+# Lniri - Liquid Glass Compositor for Wayland
 
 **[English](README.md)** | **[中文](README.zh-CN.md)**
 
