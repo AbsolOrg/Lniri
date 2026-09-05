@@ -1,5 +1,0 @@
-ignore-interior-mutability = [
-    "smithay::desktop::Window",
-    "smithay::output::Output",
-    "wayland_server::backend::ClientId",
-]
