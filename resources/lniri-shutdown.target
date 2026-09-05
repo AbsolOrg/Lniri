@@ -1,0 +1,5 @@
+[Unit]
+Description=Shutdown running Lniri session
+DefaultDependencies=no
+Conflicts=graphical-session.target graphical-session-pre.target lniri.service
+After=graphical-session.target graphical-session-pre.target lniri.service
