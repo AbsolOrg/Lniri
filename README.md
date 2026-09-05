@@ -1,14 +1,10 @@
-# Lniri — Liquid Glass Engine for Niri
+# Lniri - Liquid Glass Engine for Niri
 
 A liquid-glass optical refraction and background effect engine for the [Niri](https://github.com/niri-wm/niri) scrollable-tiling Wayland compositor.
 
-<p align="center">
-  <img width="1920" height="1080" alt="Lniri Liquid Glass Preview" src="https://github.com/user-attachments/assets/a10b40c7-b147-4dfa-8208-28ebb4003cfc" />
-</p>
-
 ---
 
-## ⚡ Quick Start: One-Liner Install & Update
+## Quick Start: One-Liner Install & Update
 
 Install Lniri or update an existing installation directly with a single command:
 
@@ -26,7 +22,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/AbsolOrg/Lniri/main/inst
 
 ---
 
-## 🚀 How to Launch
+## How to Launch
 
 1. **From your Display Manager (GDM, SDDM, Ly, Greetd):**  
    Select **Lniri (Liquid Glass)** from the session dropdown.
@@ -45,25 +41,18 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/AbsolOrg/Lniri/main/inst
 
 ---
 
-## 🖼️ Gallery & Effects
+## Gallery & Effects
 
 ### Dynamic Glass & Wallpaper Reflections
 
-<img width="1920" height="1080" alt="Glass Effect 1" src="https://github.com/user-attachments/assets/8cad6485-b685-4bc9-b22e-8cf7801cd15a" />
-
-<img width="1920" height="1080" alt="Glass Effect 2" src="https://github.com/user-attachments/assets/fccc46f0-9cda-488b-b0e1-5939d36676cf" />
-
-<img width="1920" height="1080" alt="Glass Effect 3" src="https://github.com/user-attachments/assets/ff3f0d17-3bf1-42e8-9660-e291189321f9" />
 
 ### Video Demo (Live Wallpaper + Shadows)
 
-https://github.com/user-attachments/assets/4fceeaaf-4ff1-4c4d-adcf-af52cd33a912
-
 ---
 
-## ⚙️ Configuration & Terminal Setup
+## Configuration & Terminal Setup
 
-> 📖 **Looking for complete terminal configs (Alacritty, Kitty, Ghostty), wallpaper daemon setups, and ready-to-use presets?**  
+> **Looking for complete terminal configs (Alacritty, Kitty, Ghostty), wallpaper daemon setups, and ready-to-use presets?**  
 > Check out the [**Complete Setup Template & Guide (template.md)**](template.md).
 
 Lniri reads standard Niri configuration files in the following order:
@@ -109,7 +98,7 @@ window-rule {
 
 ---
 
-## 🎛️ Parameters Breakdown
+## Parameters Breakdown
 
 | Parameter | Type | Typical Range | Description |
 | :--- | :--- | :--- | :--- |
@@ -128,7 +117,7 @@ window-rule {
 
 ---
 
-## 🛠️ Manual Installation (from Git)
+## Manual Installation (from Git)
 
 ```bash
 git clone https://github.com/AbsolOrg/Lniri.git
@@ -138,7 +127,7 @@ cd Lniri
 
 ---
 
-## 🗑️ Uninstallation
+## Uninstallation
 
 To cleanly remove Lniri and its Wayland session files while leaving standard Niri intact:
 
@@ -148,7 +137,6 @@ To cleanly remove Lniri and its Wayland session files while leaving standard Nir
 
 ---
 
-## 📜 Credits & License
+## Credits & License
 
-- Built for and powered by [niri](https://github.com/niri-wm/niri) (licensed under GPL-3.0-or-later).
 - Liquid glass shader effects inspired by [kwin-effects-glass](https://github.com/4v3ngR/kwin-effects-glass) and [Niri-glass](https://github.com/zaroutt/Niri-glass).
