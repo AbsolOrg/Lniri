@@ -19,6 +19,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/AbsolOrg/Lniri/main/inst
 ```
 
 > **该安装脚本的优势：**
+> - **自动识别已安装版本**：若检测到系统已安装 Lniri，脚本将自动切换至**更新模式**并提供通道选择：
+>   - **主分支 (Main branch)**：获取最新特性与实时代码。
+>   - **最新发布版 (Latest release)**：锁定稳定发布的 Tag 版本。
 > - **后续更新秒级完成**：在 `~/.local/share/lniri/target` 中保留编译缓存，无需重复从零编译几百个依赖。
 > - **免重复输入密码**：只需在开始时输入一次 `sudo` 密码，后台自动保持心跳，无需人工干预直至安装完成。
 > - **独立自包含**：自动安装 `lniri`、`Lniri`、`lniri-session` 以及 systemd 用户服务与 Wayland 桌面会话项，无需预先安装上游 niri。

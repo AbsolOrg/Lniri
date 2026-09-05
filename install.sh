@@ -1,10 +1,53 @@
 #!/usr/bin/env bash
 set -e
 
+# Detect if Lniri is already installed
+IS_UPDATE=false
+if command -v lniri >/dev/null 2>&1 || [ -f "/usr/local/bin/lniri" ]; then
+  IS_UPDATE=true
+fi
+
 echo "=========================================================="
-echo "          Lniri (Liquid Glass Niri) Installer             "
+if [ "$IS_UPDATE" = "true" ]; then
+  echo "          Lniri (Liquid Glass) Updater                    "
+else
+  echo "          Lniri (Liquid Glass Niri) Installer             "
+fi
 echo "=========================================================="
 echo ""
+
+# If Lniri is already installed, handle update channel selection
+TARGET_CHANNEL="${LNIRI_CHANNEL:-}"
+if [ "$IS_UPDATE" = "true" ]; then
+  CURRENT_VER="$(lniri --version 2>/dev/null || echo 'installed')"
+  echo "==> Existing Lniri installation detected: $CURRENT_VER"
+  echo "==> Switching to Update Mode."
+  echo ""
+
+  if [ -z "$TARGET_CHANNEL" ]; then
+    echo "Select update channel:"
+    echo "  1) Main branch (cutting-edge git main) [Default]"
+    echo "  2) Latest release (stable release tag)"
+    echo ""
+
+    if [ -t 0 ] || [ -c /dev/tty ]; then
+      read -r -p "Enter choice [1 or 2] (default: 1): " USER_CHOICE </dev/tty || USER_CHOICE="1"
+    else
+      USER_CHOICE="1"
+    fi
+
+    case "$USER_CHOICE" in
+      2|release|stable)
+        TARGET_CHANNEL="release"
+        ;;
+      *)
+        TARGET_CHANNEL="main"
+        ;;
+    esac
+  fi
+  echo "==> Selected channel: $TARGET_CHANNEL"
+  echo ""
+fi
 
 # 1. Ask for sudo credentials upfront and keep token alive
 echo "==> Requesting administrator privileges (sudo)..."
@@ -25,17 +68,34 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || echo "")
 
 if [ -f "$SCRIPT_DIR/Cargo.toml" ] && grep -q "lniri" "$SCRIPT_DIR/Cargo.toml" 2>/dev/null; then
   BUILD_DIR="$SCRIPT_DIR"
-  echo "==> Building directly from current directory: $BUILD_DIR"
+  echo "==> Using local repository at: $BUILD_DIR"
 else
   BUILD_DIR="${LNIRI_INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
-  if [ -d "$BUILD_DIR/.git" ]; then
-    echo "==> Updating Lniri repository in $BUILD_DIR..."
-    git -C "$BUILD_DIR" fetch --depth=1 origin main
-    git -C "$BUILD_DIR" reset --hard origin/main
-  else
+  if [ ! -d "$BUILD_DIR/.git" ]; then
     echo "==> Cloning Lniri into persistent directory: $BUILD_DIR..."
     mkdir -p "$(dirname "$BUILD_DIR")"
-    git clone --depth=1 https://github.com/AbsolOrg/Lniri.git "$BUILD_DIR"
+    git clone https://github.com/AbsolOrg/Lniri.git "$BUILD_DIR"
+  fi
+fi
+
+# Switch branch or tag based on target channel
+cd "$BUILD_DIR"
+if [ "$IS_UPDATE" = "true" ]; then
+  git fetch --tags origin || true
+  if [ "$TARGET_CHANNEL" = "release" ]; then
+    LATEST_TAG="$(git tag -l --sort=-v:refname | head -n1)"
+    if [ -n "$LATEST_TAG" ]; then
+      echo "==> Checking out latest release tag: $LATEST_TAG..."
+      git checkout "$LATEST_TAG"
+    else
+      echo "==> No release tags found in repository yet; falling back to main branch..."
+      git checkout main
+      git pull --rebase origin main
+    fi
+  else
+    echo "==> Updating to latest main branch..."
+    git checkout main
+    git pull --rebase origin main
   fi
 fi
 
@@ -107,6 +167,24 @@ if [ ! -f "$HOME/.config/lniri/config.kdl" ] && [ ! -f "$HOME/.config/niri/confi
   fi
 fi
 
+if [ "$IS_UPDATE" = "true" ]; then
+cat <<'DONE_MSG'
+
+==========================================================
+      Lniri (Liquid Glass) was successfully updated!
+==========================================================
+
+Binaries updated:
+  /usr/local/bin/lniri
+  /usr/local/bin/Lniri (symlink)
+  /usr/local/bin/lniri-session
+
+If you are currently inside an active Lniri session,
+you can reload your configuration or restart your session
+to apply the changes.
+
+DONE_MSG
+else
 cat <<'DONE_MSG'
 
 ==========================================================
@@ -125,7 +203,11 @@ How to start:
 Configuration:
   ~/.config/lniri/config.kdl (or ~/.config/niri/config.kdl)
 
+To update later:
+  Re-run the one-liner command to switch channels (main or release)
+
 To uninstall:
   ./uninstall.sh
 
 DONE_MSG
+fi
