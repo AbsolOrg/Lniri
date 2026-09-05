@@ -1,0 +1,64 @@
+name: Bug Report
+description: Report a bug, graphical glitch, shader error, or crash in Lniri
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please provide as much information as possible to help us reproduce and fix the bug.
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe what happened...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Launch Lniri with `config.kdl`
+        2. Open terminal with liquid-glass rule
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A clear description of what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Lniri Configuration Snippet
+      description: Relevant sections of your `~/.config/lniri/config.kdl` or `~/.config/niri/config.kdl`.
+      render: kdl
+  - type: textarea
+    id: system_info
+    attributes:
+      label: System & Hardware Information
+      description: Please share your Linux distribution, GPU model, and Mesa/driver versions.
+      placeholder: |
+        - OS: CachyOS / Arch / Fedora / NixOS
+        - GPU: AMD Radeon RX 6700XT / Intel Iris Xe / NVIDIA RTX 4080
+        - Mesa / Driver Version: Mesa 24.x / nvidia 550.x
+        - Wayland Compositor Session: Lniri (Liquid Glass)
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Terminal Output
+      description: Output from `lniri -v` or `journalctl --user -u lniri.service -b`.
+      render: shell
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or Screen Recordings
+      description: Drag and drop screenshots showing visual glitches or shader behavior.

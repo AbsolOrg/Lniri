@@ -7,18 +7,18 @@ window-rule {
         blur true
         xray true
         liquid-glass {
-            refraction-strength 3.0
-            power-factor 10.0
-            refraction-power 1.0
-            glow-weight 0.0001
-            edge-lighting 0.2
-            saturation 0.9
-            vibrancy 0.2
-            adaptive-dim 0.2
-            adaptive-boost 0.2
-            physical-refraction 0.0
-            lens-distortion 0.0
-            fringing 0.0
+            refraction-strength 4.0
+            power-factor 3.5
+            refraction-power 1.5
+            glow-weight 0.05
+            edge-lighting 0.5
+            saturation 1.15
+            vibrancy 0.35
+            adaptive-dim 0.0
+            adaptive-boost 0.0
+            physical-refraction 1.0
+            lens-distortion 0.15
+            fringing 0.45
         }
     }
 }

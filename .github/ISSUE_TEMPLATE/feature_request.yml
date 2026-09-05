@@ -1,0 +1,33 @@
+name: Feature Request
+description: Suggest an idea, new glass shader aesthetic, or enhancement for Lniri
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to make Lniri or its liquid glass engine even better? We'd love to hear it!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem or limitation?
+      description: A clear and concise description of what the problem is.
+      placeholder: I'm always frustrated when...
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution / Feature Description
+      description: Describe what feature, shader effect, or configuration option you'd like added.
+      placeholder: Add support for...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or workarounds you have considered.
+  - type: textarea
+    id: context
+    attributes:
+      label: Visual References & Additional Context
+      description: Screenshots, links to shaders (e.g. Shadertoy, KWin glass effects), or mockup images.

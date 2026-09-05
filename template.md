@@ -345,7 +345,35 @@ swww img /path/to/wallpaper.png --transition-type wipe --transition-duration 2
 
 Swap the `liquid-glass { ... }` block in your `config.kdl` to match your personal aesthetic preference:
 
-### Preset 1: Pure Crystal Glass (Zero Dark Theme)
+### Preset 1: Dolphin Frosted Glass (Reference Look from dolphin.png & kwin-effects-glass)
+*Deep dual-filter background blur with Snell's law optical refraction, smooth chromatic dispersion along curved borders, and natural beveled specular highlights.*
+
+```kdl
+// Recommended: In background-effect, enable both blur true and xray true:
+// Terminal opacity: 0.50 - 0.70 (e.g. Kitty background_opacity 0.60)
+background-effect {
+    blur true
+    xray true
+    liquid-glass {
+        refraction-strength 4.0
+        power-factor 3.5
+        refraction-power 1.5
+        glow-weight 0.05
+        edge-lighting 0.5
+        saturation 1.15
+        vibrancy 0.35
+        adaptive-dim 0.0
+        adaptive-boost 0.0
+        physical-refraction 1.0
+        lens-distortion 0.15
+        fringing 0.45
+    }
+}
+```
+
+---
+
+### Preset 2: Pure Crystal Glass (Zero Dark Theme)
 *100% transparent optical glass with zero dark shading or tint. Completely clear window showing pure background wallpaper.*
 
 ```kdl

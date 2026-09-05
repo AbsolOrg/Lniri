@@ -1,0 +1,35 @@
+name: Glass Shader Preset & Config Help
+description: Ask for assistance tuning liquid glass presets, terminal transparency, or wallpaper setup
+title: "[Help]: "
+labels: ["question", "preset"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Need help tuning a specific aesthetic (e.g. Dolphin-style frosted glass, crystal clear, cyberpunk rim) or setting up wallpaper daemons?
+  - type: textarea
+    id: goal
+    attributes:
+      label: Target Aesthetic / What are you trying to achieve?
+      description: Describe the visual effect you want to recreate.
+      placeholder: I want a blurred glass look like the Dolphin file manager...
+    validations:
+      required: true
+  - type: textarea
+    id: current_config
+    attributes:
+      label: Current `config.kdl` Snippet
+      description: Your current window-rule and liquid-glass settings.
+      render: kdl
+    validations:
+      required: true
+  - type: textarea
+    id: terminal_setup
+    attributes:
+      label: Terminal / App Configuration
+      description: Which terminal or app are you styling (Kitty, Alacritty, Ghostty, Foot) and what opacity are you using?
+  - type: textarea
+    id: wallpaper_daemon
+    attributes:
+      label: Wallpaper Daemon in Use
+      description: Are you using Hyprpaper, Swaybg, SWWW, or another Wayland layer background tool?
