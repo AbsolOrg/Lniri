@@ -157,6 +157,7 @@ fi
 echo -e "==> Applying Lniri liquid-glass extension files..."
 mkdir -p "$NIRI_SRC_DIR/src/render_helpers/shaders"
 mkdir -p "$NIRI_SRC_DIR/niri-config/src"
+mkdir -p "$NIRI_SRC_DIR/src/layer"
 
 cp -f "$OVERLAY_SRC_DIR/src/render_helpers/liquid_glass.rs" "$NIRI_SRC_DIR/src/render_helpers/"
 cp -f "$OVERLAY_SRC_DIR/src/render_helpers/background_effect.rs" "$NIRI_SRC_DIR/src/render_helpers/"
@@ -166,6 +167,7 @@ cp -f "$OVERLAY_SRC_DIR/src/render_helpers/mod.rs" "$NIRI_SRC_DIR/src/render_hel
 cp -f "$OVERLAY_SRC_DIR/src/render_helpers/shaders/clipped_surface.frag" "$NIRI_SRC_DIR/src/render_helpers/shaders/"
 cp -f "$OVERLAY_SRC_DIR/src/render_helpers/shaders/mod.rs" "$NIRI_SRC_DIR/src/render_helpers/shaders/"
 cp -f "$OVERLAY_SRC_DIR/niri-config/src/appearance.rs" "$NIRI_SRC_DIR/niri-config/src/"
+cp -f "$OVERLAY_SRC_DIR/src/layer/mapped.rs" "$NIRI_SRC_DIR/src/layer/"
 
 # 6. Build Lniri incrementally using persistent target/ cache
 echo -e "==> Compiling Lniri (target cache in ${GREEN}$NIRI_SRC_DIR/target${RESET})..."
