@@ -4,7 +4,7 @@ This template contains everything you need to achieve the liquid-glass refractio
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 1. [How the Liquid Glass Effect Works](#1-how-the-liquid-glass-effect-works)
 2. [Lniri Compositor Configuration (`config.kdl`)](#2-lniri-compositor-configuration-configkdl)
