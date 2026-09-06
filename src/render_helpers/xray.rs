@@ -282,6 +282,8 @@ impl XrayElement {
 
         if let Some(lg) = &self.liquid_glass {
             uniforms.extend([
+                Uniform::new("lg_liquidity", lg.liquidity as f32),
+                Uniform::new("lg_liquid_ripple", lg.liquid_ripple as f32),
                 Uniform::new("lg_refraction_strength", lg.refraction_strength as f32),
                 Uniform::new("lg_power_factor", lg.power_factor as f32),
                 Uniform::new("lg_refraction_a", lg.refraction_a as f32),
@@ -311,6 +313,8 @@ impl XrayElement {
             ]);
         } else {
             uniforms.extend([
+                Uniform::new("lg_liquidity", 0.0f32),
+                Uniform::new("lg_liquid_ripple", 0.0f32),
                 Uniform::new("lg_refraction_strength", 0.0f32),
                 Uniform::new("lg_power_factor", 0.0f32),
                 Uniform::new("lg_refraction_a", 0.0f32),

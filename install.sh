@@ -158,7 +158,11 @@ echo -e "==> Applying Lniri liquid-glass extension files..."
 mkdir -p "$NIRI_SRC_DIR/src/render_helpers/shaders"
 mkdir -p "$NIRI_SRC_DIR/niri-config/src"
 mkdir -p "$NIRI_SRC_DIR/src/layer"
+mkdir -p "$NIRI_SRC_DIR/resources"
 
+cp -f "$OVERLAY_SRC_DIR/src/main.rs" "$NIRI_SRC_DIR/src/"
+cp -f "$OVERLAY_SRC_DIR/src/cli.rs" "$NIRI_SRC_DIR/src/"
+cp -f "$OVERLAY_SRC_DIR/resources/default-config.kdl" "$NIRI_SRC_DIR/resources/"
 cp -f "$OVERLAY_SRC_DIR/src/render_helpers/liquid_glass.rs" "$NIRI_SRC_DIR/src/render_helpers/"
 cp -f "$OVERLAY_SRC_DIR/src/render_helpers/background_effect.rs" "$NIRI_SRC_DIR/src/render_helpers/"
 cp -f "$OVERLAY_SRC_DIR/src/render_helpers/framebuffer_effect.rs" "$NIRI_SRC_DIR/src/render_helpers/"
@@ -168,6 +172,13 @@ cp -f "$OVERLAY_SRC_DIR/src/render_helpers/shaders/clipped_surface.frag" "$NIRI_
 cp -f "$OVERLAY_SRC_DIR/src/render_helpers/shaders/mod.rs" "$NIRI_SRC_DIR/src/render_helpers/shaders/"
 cp -f "$OVERLAY_SRC_DIR/niri-config/src/appearance.rs" "$NIRI_SRC_DIR/niri-config/src/"
 cp -f "$OVERLAY_SRC_DIR/src/layer/mapped.rs" "$NIRI_SRC_DIR/src/layer/"
+
+# Initialize ~/.config/Lniri/config.kdl if not present, completely isolating from normal niri
+if [ ! -f "$HOME/.config/Lniri/config.kdl" ] && [ ! -f "$HOME/.config/lniri/config.kdl" ]; then
+  mkdir -p "$HOME/.config/Lniri"
+  cp -f "$OVERLAY_SRC_DIR/resources/default-config.kdl" "$HOME/.config/Lniri/config.kdl"
+  echo -e "==> Initialized isolated Lniri configuration at: ${GREEN}~/.config/Lniri/config.kdl${RESET}"
+fi
 
 # 6. Build Lniri incrementally using persistent target/ cache
 echo -e "==> Compiling Lniri (target cache in ${GREEN}$NIRI_SRC_DIR/target${RESET})..."

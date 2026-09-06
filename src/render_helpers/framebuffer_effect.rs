@@ -136,6 +136,8 @@ impl FramebufferEffectElement {
 
         if let Some(lg) = &self.liquid_glass {
             uniforms.extend([
+                Uniform::new("lg_liquidity", lg.liquidity as f32),
+                Uniform::new("lg_liquid_ripple", lg.liquid_ripple as f32),
                 Uniform::new("lg_refraction_strength", lg.refraction_strength as f32),
                 Uniform::new("lg_power_factor", lg.power_factor as f32),
                 Uniform::new("lg_refraction_a", lg.refraction_a as f32),
@@ -153,7 +155,6 @@ impl FramebufferEffectElement {
                 Uniform::new("lg_refraction_dilute", lg.refraction_dilute as f32),
                 Uniform::new("lg_dilute_strength", lg.dilute_strength as f32),
                 Uniform::new("lg_dilute_fringing", lg.dilute_fringing as f32),
-                Uniform::new("lg_physical_refraction", lg.physical_refraction as f32),
                 Uniform::new("lg_lens_distortion", lg.lens_distortion as f32),
                 Uniform::new("lg_brightness", lg.brightness as f32),
                 Uniform::new("lg_contrast", lg.contrast as f32),
@@ -165,6 +166,8 @@ impl FramebufferEffectElement {
             ]);
         } else {
             uniforms.extend([
+                Uniform::new("lg_liquidity", 0.0f32),
+                Uniform::new("lg_liquid_ripple", 0.0f32),
                 Uniform::new("lg_refraction_strength", 0.0f32),
                 Uniform::new("lg_power_factor", 0.0f32),
                 Uniform::new("lg_refraction_a", 0.0f32),

@@ -27,6 +27,8 @@ uniform vec4 corner_radius;
 uniform mat3 input_to_geo;
 
 // Liquid glass uniforms
+uniform float lg_liquidity;
+uniform float lg_liquid_ripple;
 uniform float lg_refraction_strength;
 uniform float lg_power_factor;
 uniform float lg_refraction_a;
@@ -108,8 +110,13 @@ GlassFragment snellsRefraction(
     float refractionOffsetStrength,
     float refractionRGBFringing
 ) {
-    float bandWidth = max(minHalfSize * lg_edge_thickness, 8.0 * niri_scale);
-    float ior = 1.0 + clamp(refractionStrength * 0.52, 0.05, 1.95);
+    // Dynamic meniscus thickness: scales organically with liquidity (matching liquid_enough.png fluid droplet bead)
+    float baseThickness = lg_edge_thickness;
+    if (lg_liquidity > 0.001) {
+        baseThickness = max(baseThickness, 0.16 + clamp(lg_liquidity, 0.0, 2.0) * 0.14);
+    }
+    float bandWidth = max(minHalfSize * baseThickness, 8.0 * niri_scale);
+    float ior = 1.0 + clamp(refractionStrength * (0.52 + clamp(lg_liquidity, 0.0, 2.0) * 0.38), 0.05, 2.8);
 
     // Compute smooth surface normal from SDF finite difference
     float minR = max(min(min(cornerRadius.x, cornerRadius.y), min(cornerRadius.z, cornerRadius.w)), 2.0);
@@ -122,13 +129,17 @@ GlassFragment snellsRefraction(
     vec2 smoothGrad = vec2(dxp - dxn, dyp - dyn);
     float gradLen = length(smoothGrad);
 
+    // Corner fluid pooling: surface tension causes fluid to accumulate into droplets at rounded corners
+    vec2 cornerDelta = max(abs(position) - (halfSize - vec2(minR)), vec2(0.0));
+    float cornerDist = length(cornerDelta);
+    float cornerPool = smoothstep(0.0, minR, cornerDist) * clamp(lg_liquidity, 0.0, 3.0) * 0.45;
+
     // Organic fluid curvature:
     // 1. Deep liquid meniscus along the edge (strong surface tension roll-off)
-    // 2. Cohesive fluid body curvature across the interior surface
+    // 2. Cohesive fluid body curvature across the interior surface (water droplet dome)
     float bodyDist = clamp(-dist / max(minHalfSize, 1.0), 0.0, 1.0);
-    // Smooth fluid parabolic dome across the interior body
-    float fluidBody = (1.0 - bodyDist * bodyDist) * 0.18 * clamp(refractionStrength, 0.0, 1.0);
-    float totalLiquidFactor = clamp(concaveFactor + fluidBody * (1.0 - concaveFactor), 0.0, 1.0);
+    float fluidBody = (1.0 - bodyDist * bodyDist) * (0.18 + clamp(lg_liquidity, 0.0, 2.0) * 0.35) * clamp(refractionStrength, 0.0, 1.0);
+    float totalLiquidFactor = clamp(concaveFactor + cornerPool + fluidBody * (1.0 - concaveFactor), 0.0, 1.0);
 
     // Liquid surface gradient: combines boundary meniscus with gentle body surface tension
     vec2 toCenter = -position / max(halfSize, vec2(1.0));
@@ -136,7 +147,18 @@ GlassFragment snellsRefraction(
     vec2 bodyGrad = toCenter * (1.0 - centerDistSq);
 
     vec2 bevelXY = gradLen > 0.001 ? (smoothGrad / gradLen) : vec2(0.0);
-    vec2 normalXY = bevelXY * (concaveFactor * max(refractionBevelIntensity, 0.35)) + bodyGrad * (fluidBody * 0.4);
+    vec2 normalXY = bevelXY * ((concaveFactor + cornerPool) * max(refractionBevelIntensity, 0.35)) + bodyGrad * (fluidBody * 0.45);
+
+    // Micro-ripple / wave texture (if lg_liquid_ripple > 0.0)
+    if (lg_liquid_ripple > 0.001) {
+        vec2 pR = position * 0.025;
+        vec2 rippleGrad = vec2(
+            cos(pR.x * 2.3 + pR.y * 1.9) * 1.5,
+            -sin(pR.y * 2.1 - pR.x * 1.6) * 1.5
+        ) * 0.015 * clamp(lg_liquid_ripple, 0.0, 5.0);
+        normalXY += rippleGrad * totalLiquidFactor;
+    }
+
     vec3 glassNormal = normalize(vec3(normalXY, 1.0));
 
     // Snell's law refraction rays
@@ -144,27 +166,27 @@ GlassFragment snellsRefraction(
     vec3 refractRayG = refract(viewRay, glassNormal, 1.0 / ior);
     vec2 refractDirG = length(refractRayG.xy) > 0.001 ? normalize(refractRayG.xy) : (gradLen > 0.001 ? bevelXY : vec2(0.0));
 
-    // Lens magnitude and optical displacement in physical pixels
-    float lensMagnitude = concaveFactor * bandWidth * max(refractionBevelIntensity, 0.4) + fluidBody * bandWidth * 0.5;
-    float maxShiftPx = max(minHalfSize * 0.45, 24.0 * niri_scale);
+    // Lens magnitude and optical displacement in physical pixels (matching kwin-effects-glass and liquid_enough.png)
+    float lensMagnitude = (concaveFactor + cornerPool) * bandWidth * max(refractionBevelIntensity, 0.4) + fluidBody * bandWidth * (0.5 + clamp(lg_liquidity, 0.0, 2.0) * 0.45);
+    float maxShiftPx = max(minHalfSize * (0.45 + clamp(lg_liquidity, 0.0, 2.0) * 0.25), 24.0 * niri_scale);
     float shiftPx = min(lensMagnitude * refractionStrength, maxShiftPx);
 
     // Corner optical weighting
     vec2 normalizedPos = position / (halfSize * 2.0);
-    float cornerWeight = dot(normalizedPos, normalizedPos) * refractionOffsetStrength;
-    vec2 opticalNormal = bevelXY + normalizedPos * concaveFactor * cornerWeight;
+    float cornerWeight = dot(normalizedPos, normalizedPos) * (refractionOffsetStrength + clamp(lg_liquidity, 0.0, 2.0) * 0.5);
+    vec2 opticalNormal = bevelXY + normalizedPos * (concaveFactor + cornerPool) * cornerWeight;
 
     // Convert shift to UV coordinates using isotropic uvScale:
     // In position space: +Y is UP. In UV space: +Y is DOWN. Therefore shift.y is inverted.
-    vec2 baseShiftPx = -opticalNormal * (lensMagnitude * 0.3) + refractDirG * shiftPx;
+    vec2 baseShiftPx = -opticalNormal * (lensMagnitude * 0.32) + refractDirG * shiftPx;
     vec2 baseShift = vec2(baseShiftPx.x, -baseShiftPx.y) * uvScale;
 
-    float fringing = clamp(refractionRGBFringing, 0.0, 1.0);
+    // Chromatic dispersion (Cauchy dispersion along fluid meniscus)
+    float effectiveFringing = clamp(refractionRGBFringing + clamp(lg_liquidity, 0.0, 2.0) * 0.35, 0.0, 1.0);
     vec4 color = vec4(0.0);
 
-    // 3-channel physical Snell chromatic dispersion (Cauchy dispersion)
-    if (fringing > 0.001 && totalLiquidFactor > 0.005) {
-        float dispAmount = fringing * 0.22;
+    if (effectiveFringing > 0.001 && totalLiquidFactor > 0.005) {
+        float dispAmount = effectiveFringing * (0.22 + clamp(lg_liquidity, 0.0, 2.0) * 0.18);
         float iorR = max(1.001, ior - dispAmount);
         float iorB = ior + dispAmount;
 
@@ -174,8 +196,8 @@ GlassFragment snellsRefraction(
         vec2 dirR = length(refractRayR.xy) > 0.001 ? normalize(refractRayR.xy) : refractDirG;
         vec2 dirB = length(refractRayB.xy) > 0.001 ? normalize(refractRayB.xy) : refractDirG;
 
-        vec2 shiftPxR = -opticalNormal * (lensMagnitude * 0.3) + dirR * min(lensMagnitude * (refractionStrength * (ior / iorR)), maxShiftPx);
-        vec2 shiftPxB = -opticalNormal * (lensMagnitude * 0.3) + dirB * min(lensMagnitude * (refractionStrength * (ior / iorB)), maxShiftPx);
+        vec2 shiftPxR = -opticalNormal * (lensMagnitude * 0.32) + dirR * min(lensMagnitude * (refractionStrength * (ior / iorR)), maxShiftPx);
+        vec2 shiftPxB = -opticalNormal * (lensMagnitude * 0.32) + dirB * min(lensMagnitude * (refractionStrength * (ior / iorB)), maxShiftPx);
 
         vec2 shiftR = vec2(shiftPxR.x, -shiftPxR.y) * uvScale;
         vec2 shiftB = vec2(shiftPxB.x, -shiftPxB.y) * uvScale;
@@ -362,9 +384,10 @@ vec3 glassOutline(vec2 position, vec2 blurSize, GlassFragment s, float glowStren
     float cosTheta = clamp(dot(vec3(0.0, 0.0, 1.0), s.normal), 0.0, 1.0);
     float fresnel = pow(1.0 - cosTheta, 3.0) * s.concaveFactor;
 
-    if (edgeLighting > 0.001) {
+    if (edgeLighting > 0.001 || lg_liquidity > 0.001) {
         // Natural chromatic liquid brilliance: concentrates refracted light along the meniscus curve
-        float causticBoost = s.concaveFactor * edgeLighting * 0.35 + fresnel * edgeLighting * 0.25;
+        float causticFactor = edgeLighting * 0.35 + clamp(lg_liquidity, 0.0, 2.0) * 0.30;
+        float causticBoost = s.concaveFactor * causticFactor + fresnel * (edgeLighting * 0.25 + clamp(lg_liquidity, 0.0, 2.0) * 0.25);
         col = clamp(mix(col, col * (1.0 + causticBoost), 0.85), 0.0, 1.0);
     }
 
@@ -414,11 +437,20 @@ vec4 glass_effect(
     vec2 uv_max = vec2(1.0);
 
     // Edge bevel width and curvature
-    float bezelWidthPx = max(minHalfSize * lg_edge_thickness, 10.0 * niri_scale);
+    float baseThickness = lg_edge_thickness;
+    if (lg_liquidity > 0.001) {
+        baseThickness = max(baseThickness, 0.16 + clamp(lg_liquidity, 0.0, 2.0) * 0.14);
+    }
+    float bezelWidthPx = max(minHalfSize * baseThickness, 10.0 * niri_scale);
     float minEsp = clamp(bezelWidthPx, 1.0, minHalfSize * 0.9);
     float edgeFactor = 1.0 - clamp(abs(dist) / minEsp, 0.0, 1.0);
     float smoothEdge = smoothstep(0.0, 1.0, edgeFactor);
-    float concaveFactor = 1.0 - sqrt(max(0.0, 1.0 - pow(smoothEdge, refractionNormalPow)));
+
+    float effectivePow = refractionNormalPow;
+    if (lg_liquidity > 0.001) {
+        effectivePow = mix(refractionNormalPow, 1.8, clamp(lg_liquidity * 0.5, 0.0, 0.8));
+    }
+    float concaveFactor = 1.0 - sqrt(max(0.0, 1.0 - pow(smoothEdge, effectivePow)));
     float edgeProximity = exp(dist / bezelWidthPx);
 
     GlassFragment s;

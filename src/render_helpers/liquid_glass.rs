@@ -1,5 +1,7 @@
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct LiquidGlassOptions {
+    pub liquidity: f64,
+    pub liquid_ripple: f64,
     pub refraction_strength: f64,
     pub power_factor: f64,
     pub refraction_a: f64,
@@ -31,6 +33,8 @@ pub struct LiquidGlassOptions {
 impl From<niri_config::LiquidGlass> for LiquidGlassOptions {
     fn from(config: niri_config::LiquidGlass) -> Self {
         Self {
+            liquidity: config.liquidity,
+            liquid_ripple: config.liquid_ripple,
             refraction_strength: config.refraction_strength,
             power_factor: config.power_factor,
             refraction_a: config.refraction_a,
@@ -60,4 +64,3 @@ impl From<niri_config::LiquidGlass> for LiquidGlassOptions {
         }
     }
 }
-// force rebuild

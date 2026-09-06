@@ -55,23 +55,27 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/AbsolOrg/Lniri/main/inst
 > **Looking for complete terminal configs (Alacritty, Kitty, Ghostty), wallpaper daemon setups, and ready-to-use presets?**  
 > Check out the [**Complete Setup Template & Guide (template.md)**](template.md).
 
-Lniri reads standard Niri configuration files in the following order:
-1. `~/.config/lniri/config.kdl`
-2. `~/.config/niri/config.kdl` (seamless fallback for existing configs)
+Lniri reads configuration files in the following order:
+1. `~/.config/Lniri/config.kdl` (Recommended & auto-created on first run)
+2. `~/.config/lniri/config.kdl`
 3. Custom path via `$LNIRI_CONFIG` or `$NIRI_CONFIG`
 
-### Basic Liquid Glass Window Rule
+> [!NOTE]
+> **Independent Configuration from Standard Niri**:  
+> Lniri uses `~/.config/Lniri/config.kdl` so you can use liquid-glass rules freely without breaking standard `niri`. When launching regular `niri`, it continues reading `~/.config/niri/config.kdl` without encountering syntax errors!
 
-Add the following to your `config.kdl`:
+### Basic Liquid Glass Window Rule (Liquid Droplet Style)
+
+Add the following to your `~/.config/Lniri/config.kdl`:
 
 ```kdl
 // Enable rounded corners (crucial for curved glass refraction)
 window-rule {
-    geometry-corner-radius 12
+    geometry-corner-radius 14
     clip-to-geometry true
 }
 
-// Liquid glass rule for your terminal (Alacritty / Kitty)
+// Liquid glass rule for your terminal (Alacritty / Kitty / Ghostty)
 window-rule {
     match app-id="Alacritty"
     draw-border-with-background false
@@ -79,18 +83,20 @@ window-rule {
         blur true
         xray true
         liquid-glass {
-            refraction-strength 4.0
+            liquidity 1.0           // Water-droplet meniscus & corner pooling (matches kwin-effects-glass liquid_enough.png)
+            refraction-strength 4.5
             power-factor 3.5
             refraction-power 1.5
+            edge-thickness 0.18
             glow-weight 0.0
-            edge-lighting 0.5
-            saturation 1.1
+            edge-lighting 0.6
+            saturation 1.15
             vibrancy 0.35
-            adaptive-dim 0.0
-            adaptive-boost 0.0
-            physical-refraction 0.0
-            lens-distortion 0.2
-            fringing 0.4
+            adaptive-dim 0.1
+            adaptive-boost 0.15
+            physical-refraction 1.0
+            lens-distortion 0.15
+            fringing 0.45
         }
     }
 }
@@ -102,11 +108,14 @@ window-rule {
 
 | Parameter | Type | Typical Range | Description |
 | :--- | :--- | :--- | :--- |
+| `liquidity` | float | `0.0` – `2.0` | Fluid droplet physics: scales meniscus curvature, surface-tension edge bulging, corner fluid pooling, and organic dome magnification (`1.0` matches kwin-effects-glass `liquid_enough.png`). |
+| `liquid-ripple` | float | `0.0` – `2.0` | Procedural fluid surface tension micro-ripple across the glass substrate. |
 | `refraction-strength` | float | `1.0` – `6.0` | Overall magnitude of the optical refraction. |
 | `power-factor` | float | `2.0` – `15.0` | Falloff curve from the window edge inward (lower = wider glass bevel). |
 | `refraction-power` | float | `0.5` – `2.0` | Exponential power applied to displacement vectors. |
 | `fringing` | float | `0.0` – `1.0` | Chromatic dispersion (RGB prism fringing along edges). |
 | `edge-lighting` | float | `0.0` – `1.0` | Blends wallpaper colors dynamically onto window borders. |
+| `edge-thickness` | float | `0.05` – `0.35` | Thickness of the refractive edge meniscus. |
 | `glow-weight` | float | `0.0` – `0.2` | Synthetic white highlight along the rim (`0.0` for pure optical glass). |
 | `saturation` | float | `0.5` – `1.5` | Color saturation multiplier of the refracted background. |
 | `vibrancy` | float | `0.0` – `0.5` | Luminance and vibrancy boost for glass substrates. |

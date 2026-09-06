@@ -1,21 +1,25 @@
-// Lniri Configuration Example with Liquid Glass effect enabled
-// Copy or symlink to ~/.config/lniri/config.kdl (or ~/.config/niri/config.kdl)
+// Lniri Configuration Example with Liquid Glass engine
+// Configuration path: ~/.config/Lniri/config.kdl (or ~/.config/lniri/config.kdl)
+// Keeping this isolated allows standard Niri to use ~/.config/niri/config.kdl without syntax errors!
 
 window-rule {
     match app-id=".*"
+    draw-border-with-background false
     background-effect {
         blur true
         xray true
         liquid-glass {
-            refraction-strength 4.0
+            liquidity 1.0               // Fluid droplet meniscus & corner pooling (matches kwin-effects-glass liquid_enough.png)
+            refraction-strength 4.5
             power-factor 3.5
             refraction-power 1.5
+            edge-thickness 0.18
             glow-weight 0.0
-            edge-lighting 0.0
+            edge-lighting 0.6
             saturation 1.15
             vibrancy 0.35
-            adaptive-dim 0.0
-            adaptive-boost 0.0
+            adaptive-dim 0.1
+            adaptive-boost 0.15
             physical-refraction 1.0
             lens-distortion 0.15
             fringing 0.45
