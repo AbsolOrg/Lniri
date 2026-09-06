@@ -58,10 +58,15 @@ Lniri implements real-time GLSL fragment shaders (`clipped_surface.frag`) to ref
 ## 2. Lniri Compositor Configuration (`config.kdl`)
 
 Lniri searches for its config at:
-1. `~/.config/lniri/config.kdl`
-2. `~/.config/niri/config.kdl`
+1. `~/.config/Lniri/config.kdl` (Recommended & Isolated from standard niri)
+2. `~/.config/lniri/config.kdl`
+3. Custom path via `$LNIRI_CONFIG` or `$NIRI_CONFIG`
 
-Add the following rules to your `config.kdl`:
+> [!TIP]
+> **Why ~/.config/Lniri/config.kdl is isolated:**  
+> Using `~/.config/Lniri/config.kdl` prevents standard `niri` from throwing syntax errors on `liquid-glass` nodes. Both compositors run cleanly side-by-side with separate settings!
+
+Add the following rules to your `~/.config/Lniri/config.kdl`:
 
 ```kdl
 // ============================================================================
@@ -396,6 +401,35 @@ swww img /path/to/wallpaper.png --transition-type wipe --transition-duration 2
 
 Swap the `liquid-glass { ... }` block in your `config.kdl` to match your personal aesthetic preference:
 
+### Preset 0: Liquid Droplet (KWin-Effects-Glass `liquid_enough.png` Look)
+*Deep organic water-droplet meniscus, surface tension edge roll-off, corner fluid pooling, and parabolic fluid dome magnification.*
+
+```kdl
+// Recommended: Transparent terminal (e.g. Kitty background_opacity 0.50, background #050505)
+background-effect {
+    blur false // or blur true for frosted liquid
+    xray true
+    liquid-glass {
+        liquidity 1.0           // Activates liquid physics & corner pooling (from liquid_enough.png)
+        refraction-strength 4.5
+        power-factor 3.5
+        refraction-power 1.5
+        edge-thickness 0.18
+        glow-weight 0.0         // 0.0 removes synthetic white lines for pure organic liquid sheen
+        edge-lighting 0.6       // Concentrates refracted wallpaper caustics along the fluid meniscus
+        saturation 1.15
+        vibrancy 0.35
+        adaptive-dim 0.05
+        adaptive-boost 0.15
+        physical-refraction 1.0 // Snell's Law optical refraction
+        lens-distortion 0.15    // Subtle fluid dome lens curvature
+        fringing 0.45           // Cauchy chromatic dispersion along meniscus rim
+    }
+}
+```
+
+---
+
 ### Preset 1: Dolphin Frosted Glass (Reference Look from dolphin.png & kwin-effects-glass)
 *Deep dual-filter background blur with Snell's law optical refraction, smooth chromatic dispersion along curved borders, and natural beveled specular highlights.*
 
@@ -539,9 +573,12 @@ liquid-glass {
 
 | Parameter | Type | Typical Range | Description |
 | :--- | :--- | :--- | :--- |
+| `liquidity` | float | `0.0` – `2.0` | Fluid droplet physics: scales meniscus curvature, surface-tension edge bulging, corner fluid pooling, and organic dome magnification (`1.0` matches kwin-effects-glass `liquid_enough.png`). |
+| `liquid-ripple` | float | `0.0` – `2.0` | Procedural fluid surface tension micro-ripple across the glass substrate. |
 | `refraction-strength` | float | `1.0` – `6.0` | Overall magnitude of the background optical refraction. |
 | `power-factor` | float | `2.0` – `15.0` | Falloff curve from the window edge inward (lower = wider glass bevel, higher = concentrated at rim). |
 | `refraction-power` | float | `0.5` – `2.0` | Exponential power applied to the displacement vector. |
+| `edge-thickness` | float | `0.05` – `0.35` | Thickness of the refractive edge meniscus. |
 | `fringing` | float | `0.0` – `1.0` | Chromatic dispersion (splits red/green/blue wavelengths along refractive curves). |
 | `edge-lighting` | float | `0.0` – `1.0` | Dynamically samples and blends the background wallpaper colors onto window borders. |
 | `glow-weight` | float | `0.0` – `0.3` | Soft illuminated halo intensity along the perimeter. |
@@ -568,8 +605,8 @@ Set up `~/.config/hypr/hyprpaper.conf` with a colorful, high-contrast wallpaper 
 hyprpaper &
 ```
 
-### Step 3: Copy Window Rules to `config.kdl`
-Paste the `window-rule` and `geometry-corner-radius` sections from [Section 2](#2-lniri-compositor-configuration-configkdl) into `~/.config/lniri/config.kdl` (or `~/.config/niri/config.kdl`).
+### Step 3: Copy Window Rules to `~/.config/Lniri/config.kdl`
+Paste the `window-rule` and `geometry-corner-radius` sections from [Section 2](#2-lniri-compositor-configuration-configkdl) into `~/.config/Lniri/config.kdl`. Standard Niri will continue reading `~/.config/niri/config.kdl` without conflicts!
 
 ### Step 4: Configure Your Terminal
 Set transparency to `0.50` and disable internal blur in `~/.config/kitty/kitty.conf` or `~/.config/alacritty/alacritty.toml`.

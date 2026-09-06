@@ -129,7 +129,7 @@ impl BackgroundEffect {
         let liquid_glass = effect.liquid_glass.map(LiquidGlassOptions::from);
 
         if liquid_glass.is_some() {
-            warn!("LIQUID GLASS: update_render_elements liquid_glass={:?}", liquid_glass);
+            trace!("LIQUID GLASS: update_render_elements liquid_glass={:?}", liquid_glass);
         }
 
         let mut options = Options {
