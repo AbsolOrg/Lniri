@@ -4,7 +4,293 @@ BOLD="\033[1m"
 GREEN="\033[0;32m"
 CYAN="\033[0;36m"
 YELLOW="\033[0;33m"
+RED="\033[0;31m"
 RESET="\033[0m"
+
+# Parse command line arguments
+CHECK_ONLY=false
+AUTO_BUILD_LDI=false
+INSTALL_PREBUILT=true
+
+for arg in "$@"; do
+  case "$arg" in
+    --check|--doctor)
+      CHECK_ONLY=true
+      ;;
+    --build-libdisplay-info|--fix-libs)
+      AUTO_BUILD_LDI=true
+      ;;
+    --source|--build-from-source)
+      INSTALL_PREBUILT=false
+      ;;
+    --help|-h)
+      echo "Lniri (Liquid Glass Niri) Installer & Updater"
+      echo ""
+      echo "Usage: $0 [OPTIONS]"
+      echo ""
+      echo "Options:"
+      echo "  --source, --build-from-source       Compile Lniri from source instead of downloading pre-built binary"
+      echo "  --check, --doctor                   Check system libraries and dependency compatibility without installing"
+      echo "  --build-libdisplay-info, --fix-libs Automatically build and install libdisplay-info 0.3.0 from upstream source"
+      echo "  --help, -h                          Show this help message"
+      echo ""
+      echo "Environment variables:"
+      echo "  LNIRI_CHANNEL=release|main          Select binary release version"
+      echo "  LNIRI_BUILD=source                  Force build from source"
+      exit 0
+      ;;
+  esac
+done
+
+if [ "${LNIRI_BUILD:-}" = "source" ]; then
+  INSTALL_PREBUILT=false
+fi
+
+# Version comparison helper: returns 0 if $1 >= $2
+version_ge() {
+  if [ "$1" = "$2" ]; then
+    return 0
+  fi
+  local lowest
+  lowest="$(printf "%s\n%s\n" "$1" "$2" | sort -V 2>/dev/null | head -n1)"
+  [ "$lowest" = "$2" ]
+}
+
+# Detect installed libdisplay-info version, SONAME, and library path
+detect_libdisplay_info() {
+  LDI_VER=""
+  LDI_SONAME=""
+  LDI_PATH=""
+  LDI_STATUS="missing" # missing, outdated, or ok
+
+  # 1. Check pkg-config
+  if command -v pkg-config >/dev/null 2>&1; then
+    LDI_VER="$(pkg-config --modversion libdisplay-info 2>/dev/null || true)"
+  fi
+
+  # 2. Check package managers if pkg-config didn't return a version
+  if [ -z "$LDI_VER" ]; then
+    if command -v rpm >/dev/null 2>&1; then
+      LDI_VER="$(rpm -q --qf '%{VERSION}' libdisplay-info 2>/dev/null || rpm -q --qf '%{VERSION}' libdisplay-info-devel 2>/dev/null || true)"
+      LDI_VER="$(echo "$LDI_VER" | grep -v 'package.*is not installed' || true)"
+    elif command -v dpkg-query >/dev/null 2>&1; then
+      LDI_VER="$(dpkg-query -W -f='${Version}' libdisplay-info-dev 2>/dev/null || dpkg-query -W -f='${Version}' libdisplay-info3 2>/dev/null || dpkg-query -W -f='${Version}' libdisplay-info2 2>/dev/null || dpkg-query -W -f='${Version}' libdisplay-info1 2>/dev/null || true)"
+      LDI_VER="$(echo "$LDI_VER" | sed -E 's/^[0-9]+://; s/-.*$//')"
+    elif command -v pacman >/dev/null 2>&1; then
+      LDI_VER="$(pacman -Q libdisplay-info 2>/dev/null | awk '{print $2}' | sed -E 's/-.*$//' || true)"
+    fi
+  fi
+
+  # 3. Check filesystem for shared libraries and SONAMEs across common library locations
+  local search_dirs=("/usr/local/lib" "/usr/local/lib64" "/usr/lib64" "/usr/lib" "/usr/lib/x86_64-linux-gnu" "/usr/lib/aarch64-linux-gnu" "$HOME/.local/lib")
+
+  # Priority: check for .so.3 first (0.3.0+)
+  for dir in "${search_dirs[@]}"; do
+    if [ -f "$dir/libdisplay-info.so.3" ] || compgen -G "$dir/libdisplay-info.so.3*" >/dev/null 2>&1; then
+      LDI_PATH="$(ls "$dir"/libdisplay-info.so.3* 2>/dev/null | head -n1)"
+      LDI_SONAME="libdisplay-info.so.3"
+      break
+    fi
+  done
+
+  # If .so.3 not found, check for .so.2 (0.2.x, e.g. Fedora 41-43)
+  if [ -z "$LDI_SONAME" ]; then
+    for dir in "${search_dirs[@]}"; do
+      if [ -f "$dir/libdisplay-info.so.2" ] || compgen -G "$dir/libdisplay-info.so.2*" >/dev/null 2>&1; then
+        LDI_PATH="$(ls "$dir"/libdisplay-info.so.2* 2>/dev/null | head -n1)"
+        LDI_SONAME="libdisplay-info.so.2"
+        break
+      fi
+    done
+  fi
+
+  # If .so.2 not found, check for .so.1 (0.1.x)
+  if [ -z "$LDI_SONAME" ]; then
+    for dir in "${search_dirs[@]}"; do
+      if [ -f "$dir/libdisplay-info.so.1" ] || compgen -G "$dir/libdisplay-info.so.1*" >/dev/null 2>&1; then
+        LDI_PATH="$(ls "$dir"/libdisplay-info.so.1* 2>/dev/null | head -n1)"
+        LDI_SONAME="libdisplay-info.so.1"
+        break
+      fi
+    done
+  fi
+
+  # If generic .so found without version in filename, query readelf
+  if [ -z "$LDI_SONAME" ]; then
+    for dir in "${search_dirs[@]}"; do
+      if [ -f "$dir/libdisplay-info.so" ]; then
+        LDI_PATH="$dir/libdisplay-info.so"
+        if command -v readelf >/dev/null 2>&1; then
+          LDI_SONAME="$(readelf -d "$LDI_PATH" 2>/dev/null | grep SONAME | grep -o 'libdisplay-info\.so\.[0-9]*' || true)"
+        fi
+        break
+      fi
+    done
+  fi
+
+  # Determine status
+  if [ "$LDI_SONAME" = "libdisplay-info.so.3" ]; then
+    LDI_STATUS="ok"
+    if [ -z "$LDI_VER" ]; then
+      LDI_VER=">=0.3.0"
+    fi
+  elif [ -n "$LDI_VER" ] && version_ge "$LDI_VER" "0.3.0"; then
+    LDI_STATUS="ok"
+  elif [ -n "$LDI_VER" ] && ! version_ge "$LDI_VER" "0.3.0"; then
+    LDI_STATUS="outdated"
+  elif [ "$LDI_SONAME" = "libdisplay-info.so.2" ] || [ "$LDI_SONAME" = "libdisplay-info.so.1" ]; then
+    LDI_STATUS="outdated"
+  else
+    LDI_STATUS="missing"
+  fi
+}
+
+# Compile and install libdisplay-info 0.3.0 into /usr/local
+build_and_install_libdisplay_info() {
+  echo ""
+  echo -e "${CYAN}${BOLD}==> Building & installing libdisplay-info 0.3.0 from upstream source...${RESET}"
+  local build_tmp
+  build_tmp="$(mktemp -d)"
+
+  echo -e "==> Ensuring build tools (meson, ninja, git, compiler)..."
+  if command -v dnf >/dev/null 2>&1; then
+    sudo dnf install -y meson ninja-build git gcc || true
+  elif command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update -y 2>/dev/null || true
+    sudo apt-get install -y meson ninja-build git build-essential || true
+  elif command -v zypper >/dev/null 2>&1; then
+    sudo zypper install -y meson ninja git gcc || true
+  elif command -v pacman >/dev/null 2>&1; then
+    sudo pacman -S --needed --noconfirm meson ninja git gcc || true
+  fi
+
+  echo -e "==> Fetching libdisplay-info v0.3.0..."
+  if git clone --depth 1 --branch 0.3.0 https://gitlab.freedesktop.org/emersion/libdisplay-info.git "$build_tmp/libdisplay-info" 2>/dev/null || \
+     git clone --depth 1 https://gitlab.freedesktop.org/emersion/libdisplay-info.git "$build_tmp/libdisplay-info"; then
+    cd "$build_tmp/libdisplay-info"
+    meson setup build --prefix=/usr/local --buildtype=release
+    ninja -C build
+    sudo ninja -C build install
+
+    # Configure ld.so.conf.d for /usr/local/lib and /usr/local/lib64
+    if [ -d "/etc/ld.so.conf.d" ]; then
+      echo -e "/usr/local/lib\n/usr/local/lib64" | sudo tee /etc/ld.so.conf.d/lniri-local-lib.conf >/dev/null 2>&1 || true
+    fi
+    sudo ldconfig 2>/dev/null || true
+    rm -rf "$build_tmp"
+    echo -e "${GREEN}${BOLD}==> libdisplay-info 0.3.0 successfully installed to /usr/local!${RESET}"
+    detect_libdisplay_info
+    return 0
+  else
+    echo -e "${RED}==> Failed to clone libdisplay-info from GitLab.${RESET}"
+    rm -rf "$build_tmp"
+    return 1
+  fi
+}
+
+# Display warning block and prompt to build libdisplay-info
+warn_outdated_libdisplay_info() {
+  echo ""
+  echo -e "${YELLOW}${BOLD}╔══════════════════════════════════════════════════════════════════════════════════════════╗${RESET}"
+  echo -e "${YELLOW}${BOLD}║  ⚠️  WARNING: Outdated libdisplay-info detected: ${RED}${LDI_VER:-unknown}${RESET}${YELLOW}${BOLD} (SONAME: ${RED}${LDI_SONAME:-none}${RESET}${YELLOW}${BOLD})                        ║${RESET}"
+  echo -e "${YELLOW}${BOLD}╠══════════════════════════════════════════════════════════════════════════════════════════╣${RESET}"
+  echo -e "${YELLOW}║ Lniri requires ${BOLD}libdisplay-info >= 0.3.0${RESET}${YELLOW} (SONAME: ${BOLD}libdisplay-info.so.3${RESET}${YELLOW}).                       ║${RESET}"
+  echo -e "${YELLOW}║                                                                                          ║${RESET}"
+  echo -e "${YELLOW}║ Systems with older libdisplay-info (e.g. Fedora 41-43 with 0.2.0, or distros with       ║${RESET}"
+  echo -e "${YELLOW}║ 0.1.x) fail during EDID decoding / CVT timing initialization. This causes the            ║${RESET}"
+  echo -e "${YELLOW}║ compositor to fail on startup, producing a black screen and immediately booting back     ║${RESET}"
+  echo -e "${YELLOW}║ into the display manager login screen!                                                   ║${RESET}"
+  echo -e "${YELLOW}║                                                                                          ║${RESET}"
+  echo -e "${YELLOW}║ Resolution options:                                                                      ║${RESET}"
+  echo -e "${YELLOW}║   1) Let this installer build & install it automatically:                                ║${RESET}"
+  echo -e "${YELLOW}║        ${GREEN}./install.sh --build-libdisplay-info${RESET}${YELLOW}                                              ║${RESET}"
+  echo -e "${YELLOW}║   2) Or compile manually:                                                                ║${RESET}"
+  echo -e "${YELLOW}║        git clone --depth 1 --branch 0.3.0 https://gitlab.freedesktop.org/emersion/libdisplay-info.git /tmp/ldi ║${RESET}"
+  echo -e "${YELLOW}║        cd /tmp/ldi && meson setup build --prefix=/usr/local && ninja -C build            ║${RESET}"
+  echo -e "${YELLOW}║        sudo ninja -C build install && sudo ldconfig                                      ║${RESET}"
+  echo -e "${YELLOW}${BOLD}╚══════════════════════════════════════════════════════════════════════════════════════════╝${RESET}"
+  echo ""
+
+  if [ "$AUTO_BUILD_LDI" = "true" ]; then
+    build_and_install_libdisplay_info
+  elif [ "$CHECK_ONLY" = "false" ] && ([ -t 0 ] || [ -c /dev/tty ]); then
+    read -r -p "Would you like Lniri installer to compile & install libdisplay-info 0.3.0 into /usr/local now? [y/N]: " USER_LDI_BUILD </dev/tty || USER_LDI_BUILD="N"
+    case "$USER_LDI_BUILD" in
+      y|Y|yes|YES)
+        build_and_install_libdisplay_info
+        ;;
+      *)
+        echo -e "${YELLOW}==> Continuing installation with existing library. Note: you may need to update libdisplay-info if you experience login black-screen issues.${RESET}"
+        ;;
+    esac
+  fi
+}
+
+# Check all major libraries
+check_system_libraries() {
+  echo -e "${CYAN}${BOLD}==> Checking system graphics and compositor library dependencies...${RESET}"
+  local warn_count=0
+
+  # 1. libdisplay-info check
+  detect_libdisplay_info
+  if [ "$LDI_STATUS" = "ok" ]; then
+    echo -e "  [✔] libdisplay-info: ${GREEN}${LDI_VER}${RESET} (${LDI_SONAME:-so.3}, >= 0.3.0) at ${LDI_PATH:-system}"
+  elif [ "$LDI_STATUS" = "outdated" ]; then
+    echo -e "  [!] libdisplay-info: ${RED}${LDI_VER:-unknown} (outdated, minimum: 0.3.0 / libdisplay-info.so.3)${RESET} at ${LDI_PATH:-unknown}"
+    warn_count=$((warn_count + 1))
+    warn_outdated_libdisplay_info
+  else
+    echo -e "  [?] libdisplay-info: ${YELLOW}not detected${RESET} (minimum: 0.3.0 / libdisplay-info.so.3)"
+    warn_count=$((warn_count + 1))
+    warn_outdated_libdisplay_info
+  fi
+
+  # Helper for other libraries
+  check_library_dependency() {
+    local name="$1"
+    local min_v="$2"
+    local desc="$3"
+    local curr=""
+
+    if command -v pkg-config >/dev/null 2>&1; then
+      curr="$(pkg-config --modversion "$name" 2>/dev/null || true)"
+    fi
+
+    if [ -n "$curr" ]; then
+      if version_ge "$curr" "$min_v"; then
+        echo -e "  [✔] $name: ${GREEN}$curr${RESET} (>= $min_v)"
+      else
+        echo -e "  [!] $name: ${YELLOW}$curr (outdated, recommended: >= $min_v)${RESET} — $desc"
+        warn_count=$((warn_count + 1))
+      fi
+    else
+      echo -e "  [?] $name: ${CYAN}not detected via pkg-config${RESET} (recommended: >= $min_v) — $desc"
+    fi
+  }
+
+  check_library_dependency "wayland-server" "1.21.0" "Core Wayland compositor protocol"
+  check_library_dependency "libinput" "1.21.0" "Pointer and touch input handling"
+  check_library_dependency "xkbcommon" "1.0.0" "Keyboard mapping and layout handling"
+  check_library_dependency "libpipewire-0.3" "0.3.0" "Screen capture and portal streaming"
+  check_library_dependency "libseat" "0.5.0" "Seat management and VT switching"
+  check_library_dependency "pango" "1.44.0" "Font layout and text rendering"
+  check_library_dependency "cairo" "1.16.0" "2D vector graphics rendering"
+  check_library_dependency "gbm" "21.0.0" "Mesa Generic Buffer Management for DRM/KMS"
+
+  echo ""
+  if [ "$warn_count" -eq 0 ]; then
+    echo -e "${GREEN}${BOLD}==> All core library dependencies are compatible and up to date!${RESET}"
+  else
+    echo -e "${YELLOW}==> System check completed with $warn_count warning(s).${RESET}"
+  fi
+  echo ""
+}
+
+# Fast-path for diagnostic check
+if [ "$CHECK_ONLY" = "true" ]; then
+  check_system_libraries
+  exit 0
+fi
 
 IS_UPDATE=false
 if command -v lniri >/dev/null 2>&1 || [ -f "/usr/local/bin/lniri" ]; then
@@ -19,6 +305,9 @@ else
 fi
 echo -e "${CYAN}${BOLD}==========================================================${RESET}"
 echo ""
+
+# Run system library checks before proceeding
+check_system_libraries
 
 # Update channel selection
 TARGET_CHANNEL="${LNIRI_CHANNEL:-}"
@@ -187,20 +476,31 @@ if [ "$INSTALL_PREBUILT" = "true" ]; then
       fi
     fi
 
-    # Ensure runtime library compatibility (e.g. libdisplay-info.so.1)
+    # Ensure runtime library compatibility (e.g. libdisplay-info.so.3)
     if [ "$BINARY_INSTALLED" = "true" ]; then
       mkdir -p "$HOME/.local/lib"
-      FOUND_LIB="$(find /usr/lib /usr/lib64 /usr/lib/x86_64-linux-gnu /usr/local/lib -name "libdisplay-info.so*" 2>/dev/null | grep -E '\.so(\.[0-9]+)*$' | head -n1)"
-      if [ -n "$FOUND_LIB" ]; then
-        echo -e "==> Ensuring display-info runtime compatibility for $FOUND_LIB..."
-        ln -sf "$FOUND_LIB" "$HOME/.local/lib/libdisplay-info.so.1" 2>/dev/null || true
-        sudo ln -sf "$FOUND_LIB" /usr/local/lib/libdisplay-info.so.1 2>/dev/null || true
-        LIB_DIR="$(dirname "$FOUND_LIB")"
-        sudo ln -sf "$FOUND_LIB" "$LIB_DIR/libdisplay-info.so.1" 2>/dev/null || true
-        if [ -d "/etc/ld.so.conf.d" ]; then
-          echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/lniri-local-lib.conf >/dev/null 2>&1 || true
-        fi
+      if [ -d "/etc/ld.so.conf.d" ]; then
+        echo -e "/usr/local/lib\n/usr/local/lib64" | sudo tee /etc/ld.so.conf.d/lniri-local-lib.conf >/dev/null 2>&1 || true
         sudo ldconfig 2>/dev/null || true
+      fi
+
+      NEEDED_SONAME=""
+      if command -v readelf >/dev/null 2>&1; then
+        NEEDED_SONAME="$(readelf -d /usr/local/bin/lniri 2>/dev/null | grep NEEDED | grep "libdisplay-info" | grep -o 'libdisplay-info\.so\.[0-9]*' || true)"
+      fi
+      if [ -z "$NEEDED_SONAME" ]; then
+        NEEDED_SONAME="libdisplay-info.so.3"
+      fi
+
+      FOUND_LIB="$(find /usr/local/lib /usr/local/lib64 /usr/lib /usr/lib64 /usr/lib/x86_64-linux-gnu /usr/lib/aarch64-linux-gnu "$HOME/.local/lib" -name "$NEEDED_SONAME*" 2>/dev/null | head -n1)"
+      if [ -n "$FOUND_LIB" ]; then
+        echo -e "==> Linking runtime dependency: ${GREEN}$FOUND_LIB${RESET} ($NEEDED_SONAME)..."
+        ln -sf "$FOUND_LIB" "$HOME/.local/lib/$NEEDED_SONAME" 2>/dev/null || true
+        sudo ln -sf "$FOUND_LIB" "/usr/local/lib/$NEEDED_SONAME" 2>/dev/null || true
+        sudo ldconfig 2>/dev/null || true
+      else
+        echo -e "${YELLOW}==> Warning: $NEEDED_SONAME not found in standard system library paths.${RESET}"
+        echo -e "${YELLOW}    If you encounter a black screen or crashes on login, run: ./install.sh --build-libdisplay-info${RESET}"
       fi
     fi
   fi
@@ -243,6 +543,14 @@ if [ "$BINARY_INSTALLED" = "false" ]; then
     echo -e "==> Ensuring build dependencies with zypper..."
     sudo zypper install -y git cargo rust clang pkg-config libxkbcommon-devel libinput-devel \
       libseat-devel pango-devel cairo-devel pipewire-devel systemd-devel wayland-devel
+  fi
+
+  # Check if libdisplay-info is outdated after distro packages are installed
+  detect_libdisplay_info
+  if [ "$LDI_STATUS" = "outdated" ] || [ "$LDI_STATUS" = "missing" ]; then
+    echo -e "${YELLOW}==> Note: System package manager installed an outdated or missing libdisplay-info (${LDI_VER:-$LDI_SONAME}).${RESET}"
+    echo -e "${YELLOW}    Lniri source build requires libdisplay-info >= 0.3.0.${RESET}"
+    warn_outdated_libdisplay_info
   fi
 
   # 4. Clone or update upstream Niri in persistent cache directory

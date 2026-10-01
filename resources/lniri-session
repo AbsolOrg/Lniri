@@ -1,7 +1,30 @@
 #!/bin/sh
 
 # Export library paths for runtime compatibility across distros
-export LD_LIBRARY_PATH="/usr/local/lib:$HOME/.local/lib:${LD_LIBRARY_PATH:-}"
+export LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib64:$HOME/.local/lib:${LD_LIBRARY_PATH:-}"
+
+# Runtime library preflight verification
+verify_runtime_libraries() {
+    # Check for libdisplay-info >= 0.3.0 (libdisplay-info.so.3)
+    has_valid_ldi=0
+    for p in /usr/local/lib/libdisplay-info.so.3* /usr/local/lib64/libdisplay-info.so.3* /usr/lib64/libdisplay-info.so.3* /usr/lib/libdisplay-info.so.3* /usr/lib/*-linux-gnu/libdisplay-info.so.3* "$HOME/.local/lib/libdisplay-info.so.3*"; do
+        if [ -f "$p" ]; then
+            has_valid_ldi=1
+            break
+        fi
+    done
+
+    if [ "$has_valid_ldi" -eq 0 ]; then
+        diag="[WARNING] Lniri requires libdisplay-info >= 0.3.0 (libdisplay-info.so.3). Outdated versions (< 0.3.0, e.g. Fedora 41-43) cause display enumeration to fail, resulting in black screens and immediate boot back to login. Run 'install.sh --check' or install libdisplay-info 0.3.0 to resolve."
+        echo "$diag" >&2
+        if hash logger >/dev/null 2>&1; then
+            logger -p user.warning -t lniri-session "$diag"
+        fi
+        mkdir -p "$HOME/.local/share/lniri"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') $diag" >> "$HOME/.local/share/lniri/session.log"
+    fi
+}
+verify_runtime_libraries
 
 # Detect if being run as a user service, which implies external session management,
 # exec compositor directly

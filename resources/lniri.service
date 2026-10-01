@@ -11,5 +11,5 @@ Before=xdg-desktop-autostart.target
 [Service]
 Slice=session.slice
 Type=notify
-Environment="LD_LIBRARY_PATH=/usr/local/lib:%h/.local/lib"
+Environment="LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:%h/.local/lib"
 ExecStart=/usr/local/bin/lniri --session

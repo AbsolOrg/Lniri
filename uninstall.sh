@@ -35,6 +35,13 @@ rm -f "$HOME/.local/share/systemd/user/lniri.service"
 rm -f "$HOME/.local/share/systemd/user/lniri-shutdown.target"
 rm -f "$HOME/.local/share/systemd/user/niri-glass.service"
 
+# Clean up ld.so.conf entry and local library symlinks
+if [ -f "/etc/ld.so.conf.d/lniri-local-lib.conf" ]; then
+  sudo rm -f /etc/ld.so.conf.d/lniri-local-lib.conf
+  sudo ldconfig 2>/dev/null || true
+fi
+rm -f "$HOME/.local/lib/libdisplay-info.so.3" "$HOME/.local/lib/libdisplay-info.so.1" 2>/dev/null || true
+
 echo "Reloading systemd user units..."
 systemctl --user daemon-reload 2>/dev/null || true
 
