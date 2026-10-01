@@ -48,8 +48,19 @@ jobs:
             libsystemd-dev \
             libwayland-dev \
             libgbm-dev \
+            meson \
+            ninja-build \
             libdisplay-info-dev \
             libudev-dev
+
+      - name: Build & Install libdisplay-info 0.3.0
+        run: |
+          git clone --depth 1 --branch 0.3.0 https://gitlab.freedesktop.org/emersion/libdisplay-info.git /tmp/libdisplay-info
+          cd /tmp/libdisplay-info
+          meson setup build --prefix=/usr
+          ninja -C build
+          sudo ninja -C build install
+          sudo ldconfig
 
       - name: Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable

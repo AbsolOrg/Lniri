@@ -20,6 +20,8 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/TattvaOrg/Lniri/main/ins
   - **1) Main branch**: Cutting-edge upstream commits.
   - **2) Latest release**: Stable tagged releases of Niri.
 - **Persistent Build Cache**: Maintains the Niri source and build cache in `~/.local/share/lniri/niri/target`. Subsequent runs and updates compile incrementally in seconds without recompiling all dependencies from scratch.
+- **Dependency & Library Compatibility Guard**: Preflight checks verify essential graphics libraries, ensuring `libdisplay-info >= 0.3.0` (SONAME `libdisplay-info.so.3`) is present. Warns clearly if outdated versions (e.g. Fedora 41-43 shipping 0.2.0) are found to prevent login black screens, and offers automated compilation with `--build-libdisplay-info`.
+- **Diagnostic Mode (`--check`)**: Run `./install.sh --check` anytime to verify all compositor and display dependencies without installing.
 - **Hands-Free**: Prompts for `sudo` once at the beginning and keeps the session active in the background until installation finishes.
 
 ---
